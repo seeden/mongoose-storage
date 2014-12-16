@@ -131,6 +131,52 @@ S3.prototype.validateDirectUploadPolicyKey = function(data, callback) {
 	});
 };
 
+S3.prototype.getHeader = function(key, callback) {
+	this._client.headFile(key, function(err, res) {
+		if(err) {
+			return callback(err);
+		}
+
+		if(res.statusCode< 200 || res.statusCode >299) {
+			return callback(new Error('Status code is ' + res.statusCode));
+		}
+
+		if(!res.headers) {
+			return callback(new Error('Headers are undefined'));
+		}
+
+		callback(null, res.headers);
+	});
+};
+
+S3.prototype.saveByDirectUpload = function(data, callback) {
+	var _this = this;
+
+	this.validateDirectUploadPolicyKey(data, function(err, key) {
+        if(err) {
+            return callback(err);
+        }
+
+        _this.getHeader(key, function(err, headers) {
+        	if(err) {
+            	return callback(err);
+        	}
+
+            if(!headers['content-type'] || !headers['content-length']) {
+                return callback(new Error('Content type or length is not defined in S3 header'));
+            }
+
+            var metadata = {
+            	key: key,
+            	size: headers['content-length'],
+            	type: headers['content-type']
+            };
+
+            callback(null, metadata);
+        });
+    });
+};
+
 S3.prototype.getDirectUpload = function(attachment, callback) {
 	var options = this.options;
 
@@ -175,6 +221,7 @@ S3.prototype.getDirectUpload = function(attachment, callback) {
 		var url = 'https://s3.amazonaws.com/' + options.bucket;
 	    var data = {
 	    	key            : key,
+	    	acl            : options.acl,
 	    	url            : url,
 	    	AWSAccessKeyId : options.key,
 			policy         : s3PolicyBase64,
