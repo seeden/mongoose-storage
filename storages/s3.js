@@ -3,7 +3,8 @@
 var	util = require("util"),
 	Storage = require("./storage"),
 	knox = require('knox'),
-	crypto = require("crypto");
+	crypto = require("crypto"),
+	extend = require('node.extend');
 
 var S3 = module.exports = function (options) {
 	options = options || {};
@@ -65,20 +66,28 @@ S3.prototype.remove = function(metadata, callback) {
 	});
 };
 
-S3.prototype.prepareSchema = function(schema, path) {
+S3.prototype.prepareSchema = function(schema, path, config, isArray) {
 	var storage = this; 
 
-	schema.path(path, {
-		_id  : false,
-		key  : { type: String, required: true },
-		size : { type: Number, required: true },
-		type : { type: String, required: true }
-	});
+	S3.super_.prototype.prepareSchema.call(this, schema, path, config, isArray);
 
 	schema.virtual(path + '.url').get(function() {
 		var key = this.get(path + '.key'); 
 		return 'https://s3.amazonaws.com/' + storage.options.bucket + '/' + key;
 	});
+};
+
+S3.prototype.getSchemaFields = function(config) {
+	var options = config.options || {};
+
+	var fields = {
+		_id  : false,
+		key  : extend({}, options, { type: String }), 
+		size : extend({}, options, { type: Number }),
+		type : extend({}, options, { type: String, required: false })
+	};
+
+	return fields;
 };
 
 S3.prototype.validateDirectUploadPolicy = function(data, callback) {

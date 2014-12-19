@@ -11,16 +11,16 @@ var puidShort = new Puid(true);
 var DIRECTORY_SEPARATOR = '/';	
 
 function keyToDirs(key, dirLength, dirCount) {
-	if(!fileName) {
-		throw new Error('fileName is undefined');
+	if(!key) {
+		throw new Error('key is undefined');
 	}
 
 	var minSize = dirLength*dirCount;
-	if(fileName.length<minSize) {
+	if(key.length<minSize) {
 		return null;
 	}
 
-	var chunks = fileName.match(new RegExp('.{1,' + dirLength + '}', 'g'));
+	var chunks = key.match(new RegExp('.{1,' + dirLength + '}', 'g'));
 	var dirs = chunks.slice(0, dirCount);	
 
 	return dirs.join(DIRECTORY_SEPARATOR);
@@ -77,10 +77,14 @@ Storage.prototype.transform = function(attachment, callback) {
 	});
 };
 
-Storage.prototype.prepareSchema = function(schema, path) {
-	schema.path(path, {
-		_id   : false
-	});
+Storage.prototype.prepareSchema = function(schema, path, config, isArray) {
+	var subSchema = {};
+	var fields = this.getSchemaFields(config);
+
+	subSchema[path] = isArray ? [fields] : fields;
+
+
+	schema.add(subSchema);
 
 	/*
 	for(var i=0; i< this.transformations.length; i++) {
@@ -89,6 +93,10 @@ Storage.prototype.prepareSchema = function(schema, path) {
 			transformation.updateSchema(schema); 
 		}
 	}*/
+};
+
+Storage.prototype.getSchemaFields = function(config) {
+	throw new Error('Define schema fields');
 };
 
 Storage.prototype.generateKey = function(attachment, callback) {

@@ -134,7 +134,7 @@ function attach(docPath, attachment, save, callback) {
     	function(callback) {
     		var current = doc.get(docPath);
     		//TODO: replace with detach
-    		if(!isArray && current) {
+    		if(!isArray && current && typeof current.key !== 'undefined') {
     			return storage.remove(current, function(err) {
     				callback(err);
     			});
@@ -156,8 +156,6 @@ function attach(docPath, attachment, save, callback) {
         	callback();
     	},
     	function(callback) {
-    		console.log(metadata);
-
     		if(!save) {
     			return callback(null, doc, metadata);
     		}
@@ -173,9 +171,17 @@ function attach(docPath, attachment, save, callback) {
     ], callback);
 }
 
-function detach(docPath, callback) {
+function detach(docPath, save, callback) {
+	if(typeof save === 'function') {
+		callback = save;
+		save = false;
+	}
+
 	var path = docPathToSchemaPath(docPath);
 	var	fieldOptions = this.getFieldOptions(path);
+	if(!fieldOptions) {
+		return callback(new Error('There is no storage for this path'));
+	}
 
 	var storage = fieldOptions.storage;
 	
@@ -183,7 +189,7 @@ function detach(docPath, callback) {
 
 	var current = doc.get(docPath);
 	if(!current) {
-		return callback(null, true);	
+		return callback(null, doc);	
 	}
 
 	storage.remove(current, function(err) {
@@ -193,18 +199,21 @@ function detach(docPath, callback) {
 
 		if(!fieldOptions.isArray) {
 			doc.set(docPath, void 0);
-			return callback(null, doc);
+		} else {
+			//remove item from array
+			var parts = docPath.split('.');
+			var position = parseInt(parts.pop(), 10);
+
+			var arrayDocPath = parts.join('.');
+			var currentArray = doc.get(arrayDocPath);
+
+			currentArray.splice(position, 1);
+			doc.set(arrayDocPath, currentArray);
 		}
 
-		//remove item from array
-		var parts = docPath.split('.');
-		var position = parseInt(parts.pop(), 10);
-
-		var arrayDocPath = parts.join('.');
-		var currentArray = doc.get(arrayDocPath);
-
-		currentArray.splice(position, 1);
-		doc.set(arrayDocPath, currentArray);
+		if(save) {
+			return doc.save(callback);
+		}
 
 		callback(null, doc);
 	});
@@ -279,7 +288,7 @@ var storagePlugin = module.exports = function (schema, options, fields, parentPa
 			storage: storage
 		};
 
-		storage.prepareSchema(schema, path);
+		storage.prepareSchema(schema, path, config, field.isArray);
 	});
 
 	schema.pre('remove', function(next) {

@@ -43,14 +43,14 @@ describe('Model', function() {
 
 		var schema = new Schema({
 			name      : { type: String },  
-			preview   : { type: String, storage: storage },
-			previewS3 : { type: String, storage: storageS3 },
-			images  : { type: [String], storage: storage },
+			preview   : { type: {}, storage: storage },
+			previewS3 : { type: {}, storage: storageS3 },
+			images  : { type: [{}], storage: storage },
 			sub     : {
-				file: { type: String, storage: storage }
+				file: { type: {}, storage: storage }
 			},
 			parts   : [{
-				file: { type: String, storage: storage }
+				file: { type: {}, storage: storage }
 			}]
 		});
 

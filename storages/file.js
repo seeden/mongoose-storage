@@ -3,7 +3,8 @@
 var	util = require("util"),
 	Storage = require("./storage"),
 	fs = require('fs'),
-	fse = require('fs-extra');
+	fse = require('fs-extra'),
+	extend = require('node.extend');
 
 var File = module.exports = function (options) {
 	Storage.call(this, options);
@@ -64,13 +65,15 @@ File.prototype.remove = function(metadata, callback) {
 	});
 };
 
-File.prototype.prepareSchema = function(schema, path) {
-	var storage = this; 
+File.prototype.getSchemaFields = function(config) {
+	var options = config.options || {};
 
-	schema.path(path, {
+	var fields = {
 		_id  : false,
-		key  : { type: String, required: true },
-		size : { type: Number, required: true },
-		type : { type: String, required: true }
-	});
+		key  : extend({}, options, { type: String }), 
+		size : extend({}, options, { type: Number }),
+		type : extend({}, options, { type: String, required: false })
+	};
+
+	return fields;
 };
