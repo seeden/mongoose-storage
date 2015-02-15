@@ -73,7 +73,11 @@ S3.prototype.prepareSchema = function(schema, path, config, isArray) {
 
 	schema.virtual(path + '.url').get(function() {
 		var key = this.get(path + '.key'); 
-		return 'https://s3.amazonaws.com/' + storage.options.bucket + '/' + key;
+		if(storage.options.cname) {
+			return '//' + storage.options.cname + '/' + key;
+		}
+
+		return '//s3.amazonaws.com/' + storage.options.bucket + '/' + key;
 	});
 };
 
