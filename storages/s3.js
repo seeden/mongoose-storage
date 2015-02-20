@@ -73,6 +73,10 @@ S3.prototype.prepareSchema = function(schema, path, config, isArray) {
 
 	schema.virtual(path + '.url').get(function() {
 		var key = this.get(path + '.key'); 
+		if(!key) {
+			return;
+		}
+
 		if(storage.options.cname) {
 			return '//' + storage.options.cname + '/' + key;
 		}
