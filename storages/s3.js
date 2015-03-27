@@ -77,11 +77,13 @@ S3.prototype.prepareSchema = function(schema, path, config, isArray) {
 			return;
 		}
 
+		key = encodeURIComponent(key);
+
 		if(storage.options.cname) {
-			return '//' + storage.options.cname + '/' + key;
+			return '//' + encodeURIComponent(storage.options.cname) + '/' + key;
 		}
 
-		return '//s3.amazonaws.com/' + storage.options.bucket + '/' + key;
+		return '//s3.amazonaws.com/' + encodeURIComponent(storage.options.bucket) + '/' + key;
 	});
 };
 

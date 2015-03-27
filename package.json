@@ -1,6 +1,6 @@
 {
 	"name": "mongoose-storage",
-	"version": "0.0.5",
+	"version": "0.0.6",
 	"description": "Mongoose storage",
 	"author": {
 		"name": "Zlatko Fedor",
