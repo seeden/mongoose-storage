@@ -73,18 +73,22 @@ S3.prototype.prepareSchema = function(schema, path, config, isArray) {
 
 	schema.virtual(path + '.url').get(function() {
 		var key = this.get(path + '.key'); 
-		if(!key) {
-			return;
-		}
-
-		key = encodeURIComponent(key);
-
-		if(storage.options.cname) {
-			return '//' + encodeURIComponent(storage.options.cname) + '/' + key;
-		}
-
-		return '//s3.amazonaws.com/' + encodeURIComponent(storage.options.bucket) + '/' + key;
+		return storage.getURL(key);
 	});
+};
+
+S3.prototype.getURL = function(key) {
+	if(!key) {
+		return;
+	}
+
+	key = encodeURIComponent(key);
+
+	if(this.options.cname) {
+		return '//' + encodeURIComponent(this.options.cname) + '/' + key;
+	}
+
+	return '//s3.amazonaws.com/' + encodeURIComponent(this.options.bucket) + '/' + key;
 };
 
 S3.prototype.getSchemaFields = function(config) {

@@ -269,17 +269,17 @@ var storagePlugin = module.exports = function (schema, options, fields, parentPa
 
 	schema.eachPath(function(path, config) {
 		var currentPath = parentPath ? parentPath + '.' + path : path;
+		var storage = config.options.storage;
 
-		if(config.schema) {
+		if(!storage && config.schema) {
 			storagePlugin(config.schema, options, fields, currentPath);
 			return;
 		}
 
-		if (!config.options.storage) {
+		if (!storage) {
 			return;
 		}
 
-		var storage = config.options.storage;
 		delete config.options.storage;
 
 		var field = fields[currentPath] = {

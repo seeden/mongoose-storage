@@ -3,7 +3,8 @@
 var Puid = require('puid'),
 	uuid = require('node-uuid'),
 	async = require('async'),
-	extend = require('node.extend');
+	extend = require('node.extend'),
+	_ = require('lodash');
 
 var puid = new Puid();
 var puidShort = new Puid(true);	
@@ -78,11 +79,24 @@ Storage.prototype.transform = function(attachment, callback) {
 };
 
 Storage.prototype.prepareSchema = function(schema, path, config, isArray) {
-	var subSchema = {};
 	var fields = this.getSchemaFields(config);
 
-	subSchema[path] = isArray ? [fields] : fields;
+	var originalFields = schema.path(path);
+	var originalOptions = originalFields.options || {};
+	var originalType = originalOptions.type || {};
 
+	if(_.isArray(originalType)) {
+		originalType = originalType[0];
+	}
+
+	if(_.isPlainObject(originalType)) {
+		Object.keys(originalType).forEach(function(key) {
+			fields[key] = originalType[key];
+		});
+	}
+
+	var subSchema = { };
+	subSchema[path] = isArray ? [fields] : fields;
 
 	schema.add(subSchema);
 
