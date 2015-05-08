@@ -95,10 +95,14 @@ Storage.prototype.prepareSchema = function(schema, path, config, isArray) {
 		});
 	}
 
-	var subSchema = { };
-	subSchema[path] = isArray ? [fields] : fields;
+	config = config || {};
+	var options = config.options || {};
 
-	schema.add(subSchema);
+	var subSchema = extend({}, options, {
+		type: isArray ? [fields] : fields
+	});
+
+	schema.path(path, subSchema);
 
 	/*
 	for(var i=0; i< this.transformations.length; i++) {
