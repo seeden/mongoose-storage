@@ -30,6 +30,10 @@ var S3 = module.exports = function (options) {
 
 util.inherits(S3, Storage);
 
+S3.prototype.native = function() {
+	return this._client;
+};
+
 S3.prototype.save = function(attachment, callback) {
 	var options = this.options;
 
