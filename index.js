@@ -40,25 +40,11 @@ function canAttach(docPath) {
 	return !!fieldOptions;
 }
 
-function attach(docPath, attachment, save, callback) {
-	var path = docPathToSchemaPath(docPath);
-	var	fieldOptions = this.getFieldOptions(path);
-
-	var storage = fieldOptions.storage;
-	var isArray = fieldOptions.isArray;
-	var doc = this;
-
-	if(typeof save === 'function') {
-		callback = save;
-		save = false;
-	}
-
-	attachment = attachment || {};
+function processAttachment(storage, attachment, callback) {
+	attachment = attachment || {};	
 	attachment.doc = this;
 
-	var metadata = {};
-
-    async.waterfall([
+	async.waterfall([
 		//check existance of file
 		function(callback) {
 			 fs.exists(attachment.path, function(exists) {
@@ -67,10 +53,14 @@ function attach(docPath, attachment, save, callback) {
 			 	}
 
         		callback();
-      		})
+      		});
 		}, 
 		//generate key
 		function(callback) {
+			if(attachment.key) {
+				return callback();
+			}
+
 			storage.generateKey(attachment, function(err, key) {
 				if(err) {
     				return callback(err);
@@ -82,10 +72,12 @@ function attach(docPath, attachment, save, callback) {
 		}, 		
 		//compute type and validate
 		function(callback) {
-			if(!attachment.type) {
-				var path = attachment.originalFilename || attachment.path;
-				attachment.type = mime.lookup(path) || null;
+			if(attachment.type) {
+				return callback();
 			}
+			
+			var path = attachment.originalFilename || attachment.path;
+			attachment.type = mime.lookup(path) || null;
 		
 			callback();
 		}, 
@@ -110,28 +102,44 @@ function attach(docPath, attachment, save, callback) {
 		}, 
 		//use all transformations
     	function(callback) {
-    		storage.transform(attachment, function(err, tranformationsMetadata) {
-    			if(err) {
-    				return callback(err);
-    			}
-
-    			metadata = extend(metadata, tranformationsMetadata);
-    			callback();
-    		});
+    		storage.transform(attachment, callback);
     	}, 
     	//save to storage
-    	function(callback) {
+    	function(metadata, callback) {
     		storage.save(attachment, function(err, saveMetadata) {
     			if(err) {
     				return callback(err);
     			}
 
-    			metadata = extend(metadata, saveMetadata);
-    			callback();
+    			callback(null, extend(metadata, saveMetadata));
     		});
-    	},
+    	}
+    ], callback);
+}
+
+function attach(docPath, attachment, save, callback) {
+	var path = docPathToSchemaPath(docPath);
+	var	fieldOptions = this.getFieldOptions(path);
+
+	var storage = fieldOptions.storage;
+	var isArray = fieldOptions.isArray;
+	var doc = this;
+
+	if(typeof save === 'function') {
+		callback = save;
+		save = false;
+	}
+
+	attachment = attachment || {};
+	attachment.doc = this;
+
+    async.waterfall([
+		//check existance of file
+		function(callback) {
+			doc.processAttachment(storage, attachment, callback);
+		}, 
     	//we will remove current item if exists
-    	function(callback) {
+    	function(metadata, callback) {
     		var current = doc.get(docPath);
     		//TODO: replace with detach
     		if(!isArray && current && typeof current.key !== 'undefined') {
@@ -140,10 +148,10 @@ function attach(docPath, attachment, save, callback) {
     			});
     		}
 
-    		callback();
+    		callback(null, metadata);
     	},
     	//set a mongo field
-    	function(callback) {
+    	function(metadata, callback) {
     		if(isArray) {
         		var current = doc.get(docPath) || [];
 
@@ -153,9 +161,9 @@ function attach(docPath, attachment, save, callback) {
         		doc.set(docPath, metadata);
         	}
 
-        	callback();
+        	callback(null, metadata);
     	},
-    	function(callback) {
+    	function(metadata, callback) {
     		if(!save) {
     			return callback(null, doc, metadata);
     		}
@@ -319,6 +327,8 @@ var storagePlugin = module.exports = function (schema, options, fields, parentPa
 	schema.methods.detach = detach;
 	schema.methods.detachAll = detachAll;
 	schema.methods.canAttach = canAttach;
+	schema.methods.processAttachment = processAttachment;
+
 	return schema;
 };
 
