@@ -129,13 +129,18 @@ Storage.prototype.generateKey = function(attachment, callback) {
 	this.generateUniqueKey(attachment, callback);
 };
 
-Storage.generateKey = function(secured, cb) {
+Storage.generateKey = function(secured, ext, cb) {
+	if(typeof ext === 'function') {
+		cb = ext;
+		ext = '';
+	}
+
 	var key = secured
 		? puid.generate() + '-' + uuid.v4()
 		: puidShort.generate();
 
 	//reverse key
-	key = key.split('').reverse().join('');
+	key = key.split('').reverse().join('') + ext;
 
 	cb(null, key);
 }
