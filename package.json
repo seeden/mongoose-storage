@@ -40,7 +40,7 @@
 		"lodash": "~3.6.0"
 	},
 	"devDependencies": {
-		"mongoose": "~3.8.25",
+		"mongoose": "~5.7.7",
 		"should": "~3.3.1",
 		"gulp": "~3.8.10",
 		"gulp-mocha": "~2.0.0"
